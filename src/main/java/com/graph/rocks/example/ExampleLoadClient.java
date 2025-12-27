@@ -1,4 +1,4 @@
-package com.graph.rocks;
+package com.graph.rocks.example;
 
 import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Cluster;
@@ -12,21 +12,21 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Client implementation for interacting with LsmGraph Gremlin Server
+ * Client implementation for interacting with CommunityGraph Gremlin Server
  * Demonstrates session-based communication, graph operations, and query execution
  * using Apache TinkerPop Gremlin Driver
  */
-public class LoadClient {
-    private static final Logger logger = LoggerFactory.getLogger(LoadClient.class);
+public class ExampleLoadClient {
+    private static final Logger logger = LoggerFactory.getLogger(ExampleLoadClient.class);
 
     /**
-     * Main entry point for LsmGraph client application
+     * Main entry point for CommunityGraph client application
      * Establishes session connection and executes test operations
      *
      * @param args Command line arguments (unused)
      */
     public static void main(String[] args) {
-        logger.info("Connecting to LsmGraph Server with Session mode...");
+        logger.info("Connecting to CommunityGraph Server with Session mode...");
 
         // Build cluster configuration and establish connection
         Cluster cluster = Cluster.build()
@@ -50,7 +50,7 @@ public class LoadClient {
             runTests(client);
         } catch (Exception e) {
             logger.error("Error during graph operations", e);
-            e.printStackTrace();
+            e.printStackTrace(System.err);
         } finally {
             // Clean up resources
             client.close();
@@ -60,7 +60,7 @@ public class LoadClient {
     }
 
     /**
-     * Initialize LsmGraph session with traversal source
+     * Initialize CommunityGraph session with traversal source
      * Creates 'g' traversal source for graph operations
      *
      * @param client Session-based Gremlin client
@@ -68,24 +68,24 @@ public class LoadClient {
      */
     private static void initializeSession(Client client) throws Exception {
         logger.info("\n{}", "=".repeat(60));
-        logger.info("Initializing LsmGraph Session");
+        logger.info("Initializing CommunityGraph Session");
         logger.info("=".repeat(60));
 
         // Initialize traversal source for the session
         ResultSet results = client.submit(
-                "graph = LsmGraph.open('example'); " +
+                "graph = CommunityGraph.open('example'); " +
                         "g = graph.traversal(); " +
-                        "'LsmGraph session initialized'"
+                        "'Example CommunityGraph session initialized'"
         );
         results.all().get();
 
-        logger.info("Session initialized with LsmGraph and 'g' traversal source");
+        logger.info("Session initialized with CommunityGraph and 'g' traversal source");
         logger.info("=".repeat(60));
     }
 
     /**
      * Execute comprehensive graph operation tests
-     * Demonstrates CRUD operations, queries, and traversals on LsmGraph
+     * Demonstrates CRUD operations, queries, and traversals on CommunityGraph
      *
      * @param client Session-based Gremlin client
      * @throws Exception If any graph operation fails
