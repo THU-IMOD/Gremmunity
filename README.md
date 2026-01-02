@@ -47,11 +47,16 @@ Open a new terminal window to run the example clients.
 Run the Standard Client:
 
 ```bash
+# A toy example
 java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.GremmunityClient
 
-#or
-
+# or
+# Batch Import example
 java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.BatchImportClient
+
+# or
+# Load a whole graph through .graph file and property files
+java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.ExampleLoadClient
 ```
 
 
