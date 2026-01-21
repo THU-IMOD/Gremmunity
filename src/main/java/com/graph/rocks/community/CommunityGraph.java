@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * TinkerPop 3.x compliant Graph implementation backed by LSM-Community (RocksDB)
+ * TinkerPop 3.x compliant Graph implementation backed by LSM-Community
  * Implements core graph operations (vertex/edge management) via JNI bridge to Rust-based LSM-tree storage
  * Provides persistent key-value storage with LSM-tree architecture for graph data
  */
@@ -185,6 +185,41 @@ public class CommunityGraph implements Graph, Serializable {
         return new CommunityGraph(dbName);
     }
 
+    public void reload(final String dbName) {
+        if (graphHandle != -1) {
+            close();
+        }
+        // Create base data directory
+        File parentDir = new File("./data");
+        if (!parentDir.exists() && !parentDir.mkdirs()) {
+            throw new RuntimeException("Failed to create data directory: " + parentDir.getAbsolutePath());
+        }
+        // Create graph file with header initialization
+        File graphFile = new File(parentDir, dbName + ".graph");
+        try {
+            boolean isNewFile = graphFile.createNewFile();
+
+            // Write initialization header for new files
+            if (isNewFile) {
+                try (BufferedWriter writer = new BufferedWriter(
+                        new OutputStreamWriter(new FileOutputStream(graphFile), StandardCharsets.UTF_8))) {
+                    writer.write("t 0 0");
+                    writer.newLine();
+                    writer.flush();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create graph file: " + graphFile.getAbsolutePath(), e);
+        }
+
+        // Use default name if input is invalid, trim whitespace
+        final String actualDbName = (dbName == null || dbName.trim().isEmpty())
+                ? "lsm-data"
+                : dbName.trim();
+
+        graphHandle = openDB(actualDbName);
+    }
+
     // ------------------------------ Core Graph Operations ------------------------------
 
     /**
@@ -237,8 +272,14 @@ public class CommunityGraph implements Graph, Serializable {
      * @return CommunityVertex instance (null if not found)
      */
     public Vertex vertex(Object id) {
-        byte[] outerIdBytes = IdCodec.toBytes(id);
-        long vertexHandle = getVertexHandleById(graphHandle, outerIdBytes);
+        long vertexHandle = -1;
+        if (id instanceof CommunityVertex) {
+            return (CommunityVertex)id;
+        } else {
+            byte[] outerIdBytes = IdCodec.toBytes(id);
+            vertexHandle = getVertexHandleById(graphHandle, outerIdBytes);
+        }
+
         if (vertexHandle == -1) {
             if (id instanceof Number) {
                 vertexHandle = ((Number) id).longValue();

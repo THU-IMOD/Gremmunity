@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.graph.rocks.so.GroovyGremlinQueryExecutor.VsetQuery;
+import com.graph.rocks.serialize.VsetResultSerializer;
 
 /**
  * Builder pattern implementation for second-order logic vertex subset queries
@@ -79,5 +80,31 @@ public class VertexSubsetQueryBuilder {
             throw new IllegalArgumentException("Incomplete query conditions - filter and quantifier variables required");
         }
         return VsetQuery(g, filterQuery, conditions);
+    }
+
+    /**
+     * Execute the query and automatically serialize for web visualization
+     * No need to manually call VsetResultSerializer.serialize()
+     *
+     * This method is perfect for web demos:
+     * - Automatically formats result for frontend
+     * - Includes vertex properties
+     * - Returns JSON-friendly format
+     *
+     * Example usage in Groovy:
+     * <pre>
+     * result = g.Vset()
+     *   .forall('x')
+     *   .forall('y')
+     *   .filter('g.V(x).out("knows").is(y) || g.V(y).out("knows").is(x) || g.V(x).is(y)')
+     *   .executeForWeb()  // <-- No import or serialize() needed!
+     * </pre>
+     *
+     * @return Map containing serialized Vset result ready for web display
+     * @throws IllegalArgumentException If query conditions are incomplete
+     */
+    public Map<String, Object> executeForWeb() {
+        Set<Set<Vertex>> result = execute();
+        return VsetResultSerializer.serialize(result);
     }
 }

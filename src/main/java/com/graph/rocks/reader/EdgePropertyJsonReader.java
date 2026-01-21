@@ -32,7 +32,6 @@ public class EdgePropertyJsonReader {
      * @throws IllegalArgumentException Thrown when file type is invalid or JSON structure is incorrect
      */
     public void readProperties(String fileName) throws IOException {
-        System.out.println(fileName);
         // 1. Define data directory path
         String dataDirPath = "data";
         File dataDir = new File(dataDirPath);

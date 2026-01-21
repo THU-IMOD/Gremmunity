@@ -42,7 +42,7 @@ public class CommunityVertex extends CommunityElement implements Vertex {
         super((id == null) ? generateId() : id,
                 (label == null) ? "vertex" : label,
                 graph);
-        this.properties = null;
+        this.properties = new HashMap<>();
         byte[] outerIdBytes = IdCodec.toBytes(id);
         vertexHandle = createVertex(graph.handle(), outerIdBytes, serialize());
     }
@@ -134,7 +134,7 @@ public class CommunityVertex extends CommunityElement implements Vertex {
         if (data == null || data.length == 0) {
             this.vertexHandle = vertexHandle;
             this.id = vertexHandle;
-            this.properties = null;
+            this.properties = new HashMap<>();
             return;
         }
 
@@ -221,6 +221,11 @@ public class CommunityVertex extends CommunityElement implements Vertex {
      * @return Serialized vertex data bytes
      */
     public byte[] getDataFromVertexHandle(long graphHandle, long vertexHandle) {
+        if (vertexHandle == -1) {
+            if (id instanceof Number) {
+                vertexHandle = ((Number) id).longValue();
+            }
+        }
         return graph.getJni().getDataFromVertexHandle(graphHandle, vertexHandle);
     }
 

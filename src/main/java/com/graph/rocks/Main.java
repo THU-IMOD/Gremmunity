@@ -1,11 +1,13 @@
 package com.graph.rocks;
 
 import com.graph.rocks.community.CommunityGraph;
+import com.graph.rocks.community.CommunityVertex;
 import com.graph.rocks.so.SecondOrderTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.T;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import com.graph.rocks.serialize.VsetResultSerializer;
 
 import java.util.*;
 
@@ -20,7 +22,7 @@ public class Main {
      * @param args Command line arguments (unused)
      */
     public static void main(String[] args) {
-        // Initialize RocksDB-backed graph instance
+
         try (Graph graph = CommunityGraph.open("my_database"); graph) {
             SecondOrderTraversalSource g = (SecondOrderTraversalSource) graph.traversal();
             // ==============================

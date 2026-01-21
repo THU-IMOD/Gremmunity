@@ -74,9 +74,8 @@ public class SecondOrderQueryBuilder {
         if (filterQuery == null || conditions.isEmpty()) {
             throw new IllegalArgumentException("Incomplete query conditions - filter and quantifier variables required");
         }
-        return GroovyGremlinQueryExecutor.evaluateGremlinQueryWithConditions(
+        return GroovyGremlinQueryExecutor.secondOrderQuery(
                 g,
-                new HashSet<>(g.V().toList()),
                 filterQuery,
                 conditions
         );
