@@ -348,6 +348,7 @@ impl CommunityStorage {
 
         // Verify that required directory and files exist
         if !dir_path.exists() {
+            println!("Failed!");
             return None;
         }
         for path in &[&file_path, &index_path] {

@@ -274,6 +274,9 @@ const initSubsetGraph = async () => {
           style: {
             'label': function(ele) {
               const data = ele.data()
+              if (data.name) {
+                return data.name
+              }
               const keys = Object.keys(data)
               const systemProps = ['id', 'label', '@type', '@value']
               const userProps = keys.filter(k => !systemProps.includes(k))
@@ -342,6 +345,26 @@ watch(currentIndex, (newIndex, oldIndex) => {
   console.log(`🔀 Subset changed: ${oldIndex} → ${newIndex}`)
   initSubsetGraph()
 })
+
+// 🔥 Watch for vsetResult prop changes (fix for consecutive queries)
+watch(() => props.vsetResult, (newResult) => {
+  console.log('🔄 VsetResult prop changed, updating subsets')
+  subsets.value = newResult.subsets || []
+  currentIndex.value = 0  // Reset to first subset
+  
+  // Destroy old graph if it exists
+  if (cy) {
+    cy.destroy()
+    cy = null
+  }
+  
+  // Re-initialize graph with new data
+  if (subsets.value.length > 0 && subsets.value[0].size > 0) {
+    nextTick(() => {
+      initSubsetGraph()
+    })
+  }
+}, { deep: true })
 
 // Initialize on mount
 onMounted(() => {
@@ -475,7 +498,7 @@ onUnmounted(() => {
 }
 
 .subset-visualization {
-  height: 330px;  // 固定高度，从 350px 调整到 330px
+  height: 320px;  // 固定高度，从 350px 调整到 330px
   background: #fafafa;
   border-radius: 6px;
   border: 1px solid #e4e7ed;

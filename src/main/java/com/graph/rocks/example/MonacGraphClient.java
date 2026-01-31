@@ -16,8 +16,8 @@ import java.util.UUID;
  * Demonstrates session-based communication, graph operations, and query execution
  * using Apache TinkerPop Gremlin Driver
  */
-public class GremmunityClient {
-    private static final Logger logger = LoggerFactory.getLogger(GremmunityClient.class);
+public class MonacGraphClient {
+    private static final Logger logger = LoggerFactory.getLogger(MonacGraphClient.class);
 
     /**
      * Main entry point for CommunityGraph client application

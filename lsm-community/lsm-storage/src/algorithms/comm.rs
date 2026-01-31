@@ -40,7 +40,7 @@ impl LsmCommunity {
     ///   where C is the size of the community
     /// - Space: O(C) for the returned vector
     pub fn community_search(&self, vertex_id: VId) -> Option<Vec<VId>> {
-        if vertex_id >= self.vertex_count() {
+        if vertex_id >= self.vertex_count() as u32 {
             None
         } else {
             let vertex_index_state = self.vertex_index.read();

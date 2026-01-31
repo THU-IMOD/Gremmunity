@@ -5,7 +5,7 @@
       <div class="header-left">
         <h1 class="app-title">
           <span class="logo">🔷</span>
-          Gremmunity
+          MonacGraph
         </h1>
         <span class="subtitle">Second-Order Graph Query System</span>
       </div>
@@ -206,7 +206,7 @@
     <!-- 连接对话框 -->
     <el-dialog
       v-model="showConnectionDialog"
-      title="Connect to Gremlin Server"
+      title="Connect to MonacGraph Server"
       width="500px"
     >
       <el-form :model="connectionForm" label-width="100px">
@@ -288,20 +288,41 @@ result.size()`
   {
     title: 'Second-Order: Everyone Knows Someone',
     description: 'Check if every person knows at least one other person',
-    query: `g.secondOrder()
+    query: `g.SecondOrder()
   .forall('x')
   .exist('y')
   .filter('g.V(x).out("knows").is(y)')
   .execute()`
   },
   {
-    title: 'Vset: Find Communities',
-    description: 'Find all maximal cliques using second-order logic',
+    title: 'Vset: Find All Cliques with Size > 1',
+    description: 'Find all cliques with size > 1 using second-order logic',
     query: `g.Vset()
   .forall('x')
   .forall('y')
   .filter('g.V(x).bothE().otherV().is(y) || g.V(x).is(y)')
+  .having('size > 1')
   .executeForWeb()`
+  },
+  {
+    title: 'WCC: Find Weakly Connected Components',
+    description: 'Find all weakly connected components in the graph',
+    query: 'g.WCC().executeForWeb()'
+  },
+  {
+    title: 'SCC: Find Strongly Connected Components',
+    description: 'Find all strongly connected components in the graph',
+    query: 'g.SCC().executeForWeb()'
+  },
+  {
+    title: 'Communities: Get LSM-Communities',
+    description: 'Get all LSM-Communities in the graph',
+    query: 'g.Community().executeForWeb()'
+  },
+  {
+    title: 'BFS: Reachable Vertices',
+    description: 'Find all vertices reachable from vertex 1',
+    query: 'g.BFS(1).executeForWeb()'
   }
 ])
 

@@ -2,7 +2,6 @@ package com.graph.rocks.example;
 
 import org.apache.tinkerpop.gremlin.driver.Client;
 import org.apache.tinkerpop.gremlin.driver.Cluster;
-import org.apache.tinkerpop.gremlin.driver.Result;
 import org.apache.tinkerpop.gremlin.driver.ResultSet;
 import org.apache.tinkerpop.gremlin.server.GremlinServer;
 import org.apache.tinkerpop.gremlin.server.Settings;
@@ -29,10 +28,10 @@ import java.util.Map;
 
 /**
  * Enhanced Gremlin Server with File Upload Support
- * Manages both Gremlin Server (WebSocket/HTTP on 8182) and File Upload Server (HTTP on 8080)
+ * Manages both Gremlin Server (WebSocket/HTTP on 8182) and File Upload Server (HTTP on 8284)
  */
-public class GremmunityServer {
-    private static final Logger logger = LoggerFactory.getLogger(GremmunityServer.class);
+public class MonacGraphServer {
+    private static final Logger logger = LoggerFactory.getLogger(MonacGraphServer.class);
 
     private GremlinServer gremlinServer;
     private Server uploadServer;
@@ -47,7 +46,7 @@ public class GremmunityServer {
      */
     public void start(String configFile) throws Exception {
         logger.info("=".repeat(60));
-        logger.info("Starting Gremmunity Server");
+        logger.info("Starting MonacGraph Server");
         logger.info("Config: {}", configFile);
         logger.info("Java Version: {}", System.getProperty("java.version"));
         logger.info("=".repeat(60));
@@ -62,7 +61,7 @@ public class GremmunityServer {
         startUploadServer();
 
         logger.info("=".repeat(60));
-        logger.info("✓ Gremmunity Server Started!");
+        logger.info("✓ MonacGraph Server Started!");
         logger.info("  Gremlin API: ws://localhost:8182/gremlin");
         logger.info("  Upload API:  http://localhost:{}/api/graph/upload", UPLOAD_PORT);
         logger.info("  Health Check: http://localhost:{}/api/health", UPLOAD_PORT);
@@ -257,9 +256,9 @@ public class GremmunityServer {
      * File Upload Servlet
      */
     private static class FileUploadServlet extends HttpServlet {
-        private final GremmunityServer server;
+        private final MonacGraphServer server;
 
-        public FileUploadServlet(GremmunityServer server) {
+        public FileUploadServlet(MonacGraphServer server) {
             this.server = server;
         }
 
@@ -693,7 +692,7 @@ public class GremmunityServer {
             logger.info("✓ Gremlin Server stopped");
         }
 
-        logger.info("Gremmunity Server stopped");
+        logger.info("MonacGraph Server stopped");
     }
 
     /**
@@ -705,7 +704,7 @@ public class GremmunityServer {
             configFile = args[0];
         }
 
-        final GremmunityServer server = new GremmunityServer();
+        final MonacGraphServer server = new MonacGraphServer();
 
         // Shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

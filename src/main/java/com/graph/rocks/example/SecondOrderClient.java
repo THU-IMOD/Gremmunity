@@ -153,7 +153,7 @@ public class SecondOrderClient {
         logger.info("  Query: (∃x)(∃y) x knows y");
 
         ResultSet results = client.submit(
-                "g.secondOrder()" +
+                "g.SecondOrder()" +
                         ".exist('x')" +
                         ".exist('y')" +
                         ".filter('g.V(x).out(\"knows\").is(y)')" +
@@ -172,7 +172,7 @@ public class SecondOrderClient {
         logger.info("  Query: (∃x)(∀y) y knows x OR y=x");
 
         results = client.submit(
-                "g.secondOrder()" +
+                "g.SecondOrder()" +
                         ".exist('x')" +
                         ".forall('y')" +
                         ".filter('g.V(y).out(\"knows\").is(x) || g.V(y).is(x)')" +
@@ -191,7 +191,7 @@ public class SecondOrderClient {
         logger.info("  Query: (∀x)(∀y) if x knows y then y knows x");
 
         results = client.submit(
-                "g.secondOrder()" +
+                "g.SecondOrder()" +
                         ".forall('x')" +
                         ".forall('y')" +
                         ".filter('!(g.V(x).out(\"knows\").is(y)) || g.V(y).out(\"knows\").is(x)')" +

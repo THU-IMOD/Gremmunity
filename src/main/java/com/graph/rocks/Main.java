@@ -42,7 +42,7 @@ public class Main {
             // ==============================
             // Evaluate logical condition: (∀x)(∃y) x has edge to y
             System.out.println("\n=== Execute second-order logic queries ===");
-            boolean logicalResult = g.secondOrder()
+            boolean logicalResult = g.SecondOrder()
                     .forall("x")
                     .exist("y")
                     .filter("g.V(x).bothE().otherV().is(y)")

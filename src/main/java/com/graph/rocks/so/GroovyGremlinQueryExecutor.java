@@ -401,50 +401,13 @@ public class GroovyGremlinQueryExecutor {
             vertexIds.add(i);
         }
 
-        boolean[] quantifierTypes = new boolean[k];
+        boolean[] quantifier = new boolean[k];
         for (int i = 0; i < k; i++) {
-            quantifierTypes[i] = conditions.get(i).getValue().equals("exist");
+            quantifier[i] = conditions.get(i).getValue().equals("exist");
         }
 
         // Evaluate second-order logic conditions
-        return enumerateSecondOrder(results, vertexIds, quantifierTypes, new int[k], k, 0);
-    }
-
-    /**
-     * Finds all vertex subsets that satisfy the given second-order logical condition.
-     * Generates the power set of all vertices and filters by the logical condition.
-     *
-     * @param g GraphTraversalSource for query execution
-     * @param groovyQuery Gremlin condition to evaluate
-     * @param conditions List of quantifier conditions (varName → "exist"/"forall")
-     * @return Set of valid vertex subsets that satisfy the logical condition
-     */
-    public static Set<Set<Vertex>> VsetQuery(
-            GraphTraversalSource g,
-            String groovyQuery,
-            List<Map.Entry<String, String>> conditions
-    ) {
-        // Get total vertex count and quantifier count
-        int n = g.V().count().next().intValue();
-        int k = conditions.size();
-
-        // Precompute evaluation results
-        KDimensionalArray results = new KDimensionalArray(n, k);
-        List<Vertex> vertices = g.V().toList();
-        Preconditioning(g, vertices, groovyQuery, conditions, results);
-
-        // Prepare quantifier type array
-        boolean[] quantifierTypes = new boolean[k];
-        for (int i = 0; i < k; i++) {
-            quantifierTypes[i] = conditions.get(i).getValue().equals("exist");
-        }
-
-        // Enumerate all vertex subsets and filter valid ones
-        Set<Set<Vertex>> validSubsets = new HashSet<>();
-        List<Integer> selectedVertices = new ArrayList<>();
-        enumerateVset(results, vertices, selectedVertices, groovyQuery, quantifierTypes, validSubsets, n, k, 0);
-
-        return validSubsets;
+        return enumerateSecondOrder(results, vertexIds, quantifier, new int[k], k, 0);
     }
 
     /**
@@ -463,9 +426,11 @@ public class GroovyGremlinQueryExecutor {
      */
     private static void enumerateVset(
             KDimensionalArray results,
+            boolean[] aggregationTable,
             List<Vertex> vertices,
             List<Integer> selectedVertices,
             String groovyQuery,
+            String aggregationQuery,
             boolean[] quantifier,
             Set<Set<Vertex>> subsets,
             int n,
@@ -474,6 +439,10 @@ public class GroovyGremlinQueryExecutor {
 
         // Base case: full subset built - evaluate and collect if valid
         if (index >= n) {
+            int size = selectedVertices.size();
+            if (!aggregationTable[size]) {
+                return;
+            }
             if (enumerateSecondOrder(results, selectedVertices, quantifier, new int[k], k, 0)) {
                 Set<Vertex> validSubset = new HashSet<>();
                 for (int i : selectedVertices) {
@@ -486,10 +455,100 @@ public class GroovyGremlinQueryExecutor {
 
         // Include current vertex in subset
         selectedVertices.add(index);
-        enumerateVset(results, vertices, selectedVertices, groovyQuery, quantifier, subsets, n, k, index + 1);
+        enumerateVset(results, aggregationTable, vertices, selectedVertices, groovyQuery, aggregationQuery, quantifier, subsets, n, k, index + 1);
 
         // Exclude current vertex from subset
         selectedVertices.remove(selectedVertices.size() - 1);
-        enumerateVset(results, vertices, selectedVertices, groovyQuery, quantifier, subsets, n, k, index + 1);
+        enumerateVset(results, aggregationTable, vertices, selectedVertices, groovyQuery, aggregationQuery, quantifier, subsets, n, k, index + 1);
+    }
+
+    /**
+     * Finds all vertex subsets that satisfy the given second-order logical condition.
+     * Generates the power set of all vertices and filters by the logical condition.
+     *
+     * @param g GraphTraversalSource for query execution
+     * @param groovyQuery Gremlin condition to evaluate
+     * @param conditions List of quantifier conditions (varName → "exist"/"forall")
+     * @return Set of valid vertex subsets that satisfy the logical condition
+     */
+    public static Set<Set<Vertex>> VsetQuery(
+            GraphTraversalSource g,
+            String groovyQuery,
+            String aggregationQuery,
+            List<Map.Entry<String, String>> conditions
+    ) {
+        // Get total vertex count and quantifier count
+        int n = g.V().count().next().intValue();
+        int k = conditions.size();
+
+        // Precompute evaluation results
+        KDimensionalArray results = new KDimensionalArray(n, k);
+        List<Vertex> vertices = g.V().toList();
+        Preconditioning(g, vertices, groovyQuery, conditions, results);
+        boolean[] aggregationTable = new boolean[n + 1];
+        for (int i = 0; i <= n; i++) {
+            aggregationTable[i] = true;
+            GroovyShell shell = new GroovyShell();
+            shell.setVariable("size", i);
+            Object result = shell.evaluate(aggregationQuery);
+            if (result instanceof Boolean) {
+                if (!((Boolean) result))
+                    aggregationTable[i] = false;
+            } else {
+                aggregationTable[i] = false;
+            }
+        }
+
+        // Prepare quantifier type array
+        boolean[] quantifierTypes = new boolean[k];
+        for (int i = 0; i < k; i++) {
+            quantifierTypes[i] = conditions.get(i).getValue().equals("exist");
+        }
+
+        // Enumerate all vertex subsets and filter valid ones
+        Set<Set<Vertex>> validSubsets = new HashSet<>();
+        List<Integer> selectedVertices = new ArrayList<>();
+        enumerateVset(results, aggregationTable, vertices, selectedVertices, groovyQuery, aggregationQuery, quantifierTypes, validSubsets, n, k, 0);
+
+        return validSubsets;
+    }
+
+    public static Set<Set<Vertex>> CommunityQuery(
+            GraphTraversalSource g,
+            String groovyQuery,
+            String aggregationQuery,
+            List<Map.Entry<String, String>> conditions,
+            Set<Set<Vertex>> communities
+    ) {
+        int k = conditions.size();
+        boolean[] quantifier = new boolean[k];
+        for (int i = 0; i < k; i++) {
+            quantifier[i] = conditions.get(i).getValue().equals("exist");
+        }
+        Set<Set<Vertex>> validSubsets = new HashSet<>();
+        for (Set<Vertex> community: communities) {
+            int n = community.size();
+            GroovyShell shell = new GroovyShell();
+            shell.setVariable("size", n);
+            Object result = shell.evaluate(aggregationQuery);
+            if (result instanceof Boolean) {
+                if (!((Boolean) result))
+                    continue;
+            } else {
+                continue;
+            }
+            KDimensionalArray results = new KDimensionalArray(n, k);
+            List<Vertex> vertices = new ArrayList<>(community);
+            Preconditioning(g, vertices, groovyQuery, conditions, results);
+            List<Integer> vertexIds = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                vertexIds.add(i);
+            }
+            boolean answer = enumerateSecondOrder(results, vertexIds, quantifier, new int[k], k, 0);
+            if (answer) {
+                validSubsets.add(community);
+            }
+        }
+        return validSubsets;
     }
 }

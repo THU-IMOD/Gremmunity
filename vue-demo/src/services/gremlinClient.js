@@ -105,7 +105,7 @@ class GremlinService {
         headers: {
           'Content-Type': 'application/json'
         },
-        timeout: 30000 // 30秒超时
+        timeout: 60000 // 60秒超时
       })
       
       const executionTime = Date.now() - startTime
@@ -576,7 +576,7 @@ class GremlinService {
 
       return {
         data: {
-          id: String(id || index),
+          id: 'edge-' + String(id !== undefined ? id : index),  // 🔥 添加 'edge-' 前缀
           source: String(source),
           target: String(target),
           label: String(label || 'edge')
@@ -631,7 +631,7 @@ class GremlinService {
       let id, label, source, target, properties = {}
       
       if (typeof e === 'object' && e !== null) {
-        id = e.id || index
+        id = e.id !== undefined ? e.id : index
         label = e.label || 'edge'
         source = String(e.source || e.outV || '')
         target = String(e.target || e.inV || '')
@@ -649,7 +649,7 @@ class GremlinService {
 
       return {
         data: {
-          id: String(id),
+          id: 'edge-' + String(id),  // 🔥 添加 'edge-' 前缀
           source,
           target,
           label,

@@ -9,6 +9,7 @@ resolver = "2"
 
 [workspace.dependencies]
 lsm-storage = { path = "lsm-storage" }
+cosmo = { path = "cosmo" }
 
 anyhow = "1.0.100"
 bincode = "1.3"

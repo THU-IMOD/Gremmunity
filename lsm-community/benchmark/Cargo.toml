@@ -12,6 +12,10 @@ name = "wcc"
 path = "src/wcc.rs"
 
 [[bin]]
+name = "scc"
+path = "src/scc.rs"
+
+[[bin]]
 name = "cs"
 path = "src/cs.rs"
 
@@ -25,6 +29,7 @@ path = "src/dyn.rs"
 
 [dependencies]
 lsm-storage = { workspace = true }
+cosmo = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 indicatif = { workspace = true }

@@ -15,14 +15,25 @@ public class Test {
     public static void main(String[] args) {
 
         try (CommunityGraph graph = CommunityGraph.open("example"); graph) {
-            graph.loadVertexProperty("exampleVertexProperty");
-            graph.loadEdgeProperty("exampleEdgeProperty.json");
+            graph.loadVertexProperty("exampleVertexProperty.json");
+            graph.loadEdgeProperty("exampleEdgeProperty.csv");
             SecondOrderTraversalSource g = (SecondOrderTraversalSource) graph.traversal();
-            boolean ans = g.secondOrder()
+            boolean ans = g.SecondOrder()
                     .forall("x")
                     .exist("y")
                     .filter("g.V(x).bothE().otherV().is(y)")
                     .execute();
+
+            Set<Set<Vertex>> sccs = g.SCC().execute();
+            Set<Set<Object>> results = new HashSet<>();
+            for (Set<Vertex> vertexSet: sccs) {
+                Set<Object> nameSet = new HashSet<>();
+                for (Vertex vertex: vertexSet) {
+                    nameSet.add(vertex.value("city"));
+                }
+                results.add(nameSet);
+            }
+            System.out.println("Valid vertex subsets (by city): " + results);
         } catch (Exception e) {
             e.printStackTrace(System.err);
         } finally {

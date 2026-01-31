@@ -32,15 +32,6 @@ impl LsmCommunity {
     /// - Each vertex appears at most once in the result with its shortest distance
     /// - The order of vertices in the result follows BFS discovery order (level by level)
     pub fn bfs(&self, start_vertex: VId) -> Vec<(VId, u32)> {
-        let vertex_index_state = self.vertex_index.read();
-        // Pre-check: verify start vertex exists
-        let (res, _) = self
-            .read_neighbor_hold_index_vertex(start_vertex, false, &vertex_index_state)
-            .unwrap();
-        if res.is_none() {
-            return vec![];
-        }
-
         // Initialize visited bitmap - using bit-level marking for space efficiency
         let max_vid = self.vertex_count() as VId;
         let bitmap_size = ((max_vid + 63) / 64) as usize;
@@ -71,23 +62,18 @@ impl LsmCommunity {
         result.push((start_vertex, 0u32));
 
         while let Some((current_vid, current_dist)) = queue.pop_front() {
-            // Read neighbors
-            let (neighbor_res, _) =
-                match self.read_neighbor_hold_index_vertex(current_vid, false, &vertex_index_state)
-                {
-                    Ok(r) => r,
-                    Err(_) => continue,
-                };
-
-            // Skip if vertex is invalid
-            let neighbors = match neighbor_res {
-                Some(n) => n,
-                None => continue,
+            // Read the neighbor list of the current vertex
+            let neighbors = match self.read_out_neighbor_clone(current_vid) {
+                // Success: Get the Vec<VId> neighbor list directly (no Option needed)
+                Ok(n) => n,
+                // Failure: Skip the current iteration without further processing
+                Err(_) => continue,
             };
 
+            // Calculate the distance of the neighbor vertices
             let next_dist = current_dist + 1;
 
-            // Process each neighbor
+            // Iterate over and process each neighbor vertex
             for neighbor_vid in neighbors {
                 if !is_visited(&visited, neighbor_vid) {
                     mark_visited(&mut visited, neighbor_vid);

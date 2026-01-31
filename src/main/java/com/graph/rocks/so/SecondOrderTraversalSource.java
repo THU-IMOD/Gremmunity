@@ -1,8 +1,10 @@
 package com.graph.rocks.so;
 
+import net.bytebuddy.asm.Advice;
 import org.apache.tinkerpop.gremlin.process.traversal.TraversalStrategies;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.structure.Graph;
+import com.graph.rocks.so.CommunityType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -52,7 +54,7 @@ public class SecondOrderTraversalSource extends GraphTraversalSource {
      * Entry point for building second-order logic queries
      * @return SecondOrderQueryBuilder instance for constructing complex queries
      */
-    public SecondOrderQueryBuilder secondOrder() {
+    public SecondOrderQueryBuilder SecondOrder() {
         return new SecondOrderQueryBuilder(this);
     }
 
@@ -62,6 +64,22 @@ public class SecondOrderTraversalSource extends GraphTraversalSource {
      */
     public VertexSubsetQueryBuilder Vset() {
         return new VertexSubsetQueryBuilder(this);
+    }
+
+    public CommunityQueryBuilder Community() {
+        return new CommunityQueryBuilder(this, CommunityType.COMMUNITY);
+    }
+
+    public CommunityQueryBuilder WCC() {
+        return new CommunityQueryBuilder(this, CommunityType.WCC);
+    }
+
+    public CommunityQueryBuilder SCC() {
+        return new CommunityQueryBuilder(this, CommunityType.SCC);
+    }
+
+    public BfsQueryBuilder BFS(Object id) {
+        return new BfsQueryBuilder(this, id);
     }
 
     /**

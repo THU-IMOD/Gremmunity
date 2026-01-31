@@ -48,6 +48,8 @@ impl LsmCommunityWrapper {
         })
     }
 
+    pub fn vertex_count(&self) -> u32 { self.lsm_community.vertex_count() as u32}
+
     /// Get all vertex (Inner) IDs in the graph
     pub fn get_all_vertices(&self) -> Vec<VId> {
         self.lsm_community.get_all_vertex_id()

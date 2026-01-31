@@ -20,10 +20,10 @@ public class KDimensionalArray {
      *
      * @param n Size of each dimension (index range: 0 ~ n-1)
      * @param k Number of dimensions
-     * @throws IllegalArgumentException if n or k is less than or equal to 0
+     * @throws IllegalArgumentException if n or k is less than 0
      */
     public KDimensionalArray(int n, int k) {
-        if (n <= 0 || k <= 0) {
+        if (n < 0 || k < 0) {
             throw new IllegalArgumentException("n and k must be greater than 0");
         }
 

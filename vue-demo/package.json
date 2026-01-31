@@ -1,7 +1,7 @@
 {
-  "name": "gremmunity-demo",
+  "name": "monacgraph-demo",
   "version": "1.0.0",
-  "description": "Gremmunity Graph Query Visualization",
+  "description": "MonacGraph Query Visualization",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

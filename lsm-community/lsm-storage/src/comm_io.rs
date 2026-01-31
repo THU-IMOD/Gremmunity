@@ -465,9 +465,9 @@ impl LsmCommunity {
     }
 
     /// Get the vertex count in this storage engine
-    pub fn vertex_count(&self) -> u32 {
+    pub fn vertex_count(&self) -> usize {
         let vertex_index_state = self.vertex_index.read();
-        vertex_index_state.vertex_array.len() as u32
+        vertex_index_state.vertex_array.len()
     }
 
     /// Check the state of a vertex.

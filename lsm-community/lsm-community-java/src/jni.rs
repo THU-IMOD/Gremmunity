@@ -833,3 +833,286 @@ pub extern "system" fn Java_com_graph_rocks_RustJNI_removeEdge(
         );
     }
 }
+
+/// Get all vertices reachable from a starting vertex using BFS
+///
+/// # Arguments
+/// * `graph_handle` - Handle to the graph instance
+/// * `vertex_handle` - Starting vertex for BFS traversal
+///
+/// # Returns
+/// Array format: [vh1, dist1, vh2, dist2, ..., vhk, distk]
+/// where vhi is the i-th reachable vertex handle and disti is its distance from start
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_graph_rocks_RustJNI_getBfsVertices(
+    mut env: JNIEnv,
+    _class: JObject,
+    graph_handle: jlong,
+    vertex_handle: jlong,
+) -> jlongArray {
+    // Get graph instance from global registry
+    let graph = match GRAPH_REGISTRY.get(&graph_handle) {
+        Some(entry) => Arc::clone(entry.value()),
+        None => {
+            let _ = env.throw_new(
+                "java/lang/IllegalArgumentException",
+                format!("Invalid graph handle: {}", graph_handle),
+            );
+            return std::ptr::null_mut();
+        }
+    };
+
+    // Validate vertex handle
+    if vertex_handle < 0 || vertex_handle >= graph.vertex_count() as jlong {
+        let _ = env.throw_new(
+            "java/lang/IllegalArgumentException",
+            format!("Invalid vertex handle: {}", vertex_handle),
+        );
+        return std::ptr::null_mut();
+    }
+
+    // Run BFS - returns Vec<(VId, u32)>
+    let bfs_result = graph.lsm_community.bfs(vertex_handle as VId);
+
+    // Convert Vec<(VId, u32)> to interleaved array [vh1, dist1, vh2, dist2, ...]
+    let mut result = Vec::with_capacity(bfs_result.len() * 2);
+    for (vertex_id, distance) in bfs_result {
+        result.push(vertex_id as jlong);
+        result.push(distance as jlong);
+    }
+
+    // Convert Vec<jlong> to jlongArray
+    match env.new_long_array(result.len() as i32) {
+        Ok(array) => {
+            if let Err(e) = env.set_long_array_region(&array, 0, &result) {
+                let _ = env.throw_new(
+                    "java/lang/RuntimeException",
+                    format!("Failed to set array region: {}", e),
+                );
+                return std::ptr::null_mut();
+            }
+            array.into_raw()
+        }
+        Err(e) => {
+            let _ = env.throw_new(
+                "java/lang/OutOfMemoryError",
+                format!("Failed to allocate array: {}", e),
+            );
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Get Weakly Connected Components for the entire graph
+///
+/// # Arguments
+/// * `graph_handle` - Handle to the graph instance
+///
+/// # Returns
+/// Array format: [k, vh1, wcc1, vh2, wcc2, ..., vhn, wccn]
+/// where k is the number of components, vhi is vertex handle i,
+/// and wcci is the component ID (0 to k-1) for vertex i
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_graph_rocks_RustJNI_getWCC(
+    mut env: JNIEnv,
+    _class: JObject,
+    graph_handle: jlong,
+) -> jlongArray {
+    // Get graph instance from global registry
+    let graph = match GRAPH_REGISTRY.get(&graph_handle) {
+        Some(entry) => Arc::clone(entry.value()),
+        None => {
+            let _ = env.throw_new(
+                "java/lang/IllegalArgumentException",
+                format!("Invalid graph handle: {}", graph_handle),
+            );
+            return std::ptr::null_mut();
+        }
+    };
+
+    // Run WCC algorithm
+    let wcc_result = graph.lsm_community.wcc();
+    let vertex_count = wcc_result.len();
+
+    // Count number of unique components and normalize component IDs to 0..k-1
+    let component_map = DashMap::new();
+    let mut next_component_id: VId = 0;
+
+    let normalized_wcc: Vec<VId> = wcc_result
+        .into_iter()
+        .map(|comp_id| {
+            *component_map.entry(comp_id).or_insert_with(|| {
+                let id = next_component_id;
+                next_component_id += 1;
+                id
+            })
+        })
+        .collect();
+
+    let num_components = next_component_id;
+
+    // Build result array: [k, vh0, wcc0, vh1, wcc1, ..., vh(n-1), wcc(n-1)]
+    let mut result = Vec::with_capacity(2 * vertex_count + 1);
+    result.push(num_components as jlong); // First element: number of components
+
+    for (vertex_handle, component_id) in normalized_wcc.iter().enumerate() {
+        result.push(vertex_handle as jlong); // Vertex handle
+        result.push(*component_id as jlong); // Component ID (0 to k-1)
+    }
+
+    // Convert Vec<jlong> to jlongArray
+    match env.new_long_array(result.len() as i32) {
+        Ok(array) => {
+            if let Err(e) = env.set_long_array_region(&array, 0, &result) {
+                let _ = env.throw_new(
+                    "java/lang/RuntimeException",
+                    format!("Failed to set array region: {}", e),
+                );
+                return std::ptr::null_mut();
+            }
+            array.into_raw()
+        }
+        Err(e) => {
+            let _ = env.throw_new(
+                "java/lang/OutOfMemoryError",
+                format!("Failed to allocate array: {}", e),
+            );
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Get Strongly Connected Components for the entire graph
+///
+/// # Arguments
+/// * `graph_handle` - Handle to the graph instance
+///
+/// # Returns
+/// Array format: [k, vh1, scc1, vh2, scc2, ..., vhn, sccn]
+/// where k is the number of components, vhi is vertex handle i,
+/// and scci is the component ID (0 to k-1) for vertex i
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_graph_rocks_RustJNI_getSCC(
+    mut env: JNIEnv,
+    _class: JObject,
+    graph_handle: jlong,
+) -> jlongArray {
+    // Get graph instance from global registry
+    let graph = match GRAPH_REGISTRY.get(&graph_handle) {
+        Some(entry) => Arc::clone(entry.value()),
+        None => {
+            let _ = env.throw_new(
+                "java/lang/IllegalArgumentException",
+                format!("Invalid graph handle: {}", graph_handle),
+            );
+            return std::ptr::null_mut();
+        }
+    };
+
+    // Run SCC algorithm
+    let normalized_scc = graph.lsm_community.scc();
+    let vertex_count = normalized_scc.len();
+    let num_components = normalized_scc.iter().max().unwrap() + 1;
+
+    // Build result array: [k, vh0, scc0, vh1, scc1, ..., vh(n-1), scc(n-1)]
+    let mut result = Vec::with_capacity(2 * vertex_count + 1);
+    result.push(num_components as jlong); // First element: number of components
+
+    for (vertex_handle, component_id) in normalized_scc.iter().enumerate() {
+        result.push(vertex_handle as jlong); // Vertex handle
+        result.push(*component_id as jlong); // Component ID (0 to k-1)
+    }
+
+    // Convert Vec<jlong> to jlongArray
+    match env.new_long_array(result.len() as i32) {
+        Ok(array) => {
+            if let Err(e) = env.set_long_array_region(&array, 0, &result) {
+                let _ = env.throw_new(
+                    "java/lang/RuntimeException",
+                    format!("Failed to set array region: {}", e),
+                );
+                return std::ptr::null_mut();
+            }
+            array.into_raw()
+        }
+        Err(e) => {
+            let _ = env.throw_new(
+                "java/lang/OutOfMemoryError",
+                format!("Failed to allocate array: {}", e),
+            );
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Get pre-computed communities for the entire graph
+///
+/// # Arguments
+/// * `graph_handle` - Handle to the graph instance
+///
+/// # Returns
+/// Array format: [m, c1_size, v1_1, v1_2, ..., v1_c1, c2_size, v2_1, ..., v2_c2, ..., cm_size, vm_1, ..., vm_cm]
+/// where:
+/// - m is the number of communities
+/// - ci_size is the size of the i-th community
+/// - vi_1, vi_2, ..., vi_ci are the vertex IDs belonging to the i-th community
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_com_graph_rocks_RustJNI_getCommunities(
+    mut env: JNIEnv,
+    _class: JObject,
+    graph_handle: jlong,
+) -> jlongArray {
+    // 1. Get graph instance from global registry
+    let graph = match GRAPH_REGISTRY.get(&graph_handle) {
+        Some(entry) => Arc::clone(entry.value()),
+        None => {
+            let _ = env.throw_new(
+                "java/lang/IllegalArgumentException",
+                format!("Invalid graph handle: {}", graph_handle),
+            );
+            return std::ptr::null_mut();
+        }
+    };
+
+    // 2. Get pre-computed community structure via community_detection()
+    let communities = graph.lsm_community.community_detection();
+    let num_communities = communities.len();
+
+    // 3. Calculate total capacity of the result vector to avoid reallocation
+    let mut total_capacity = 1;
+    for comm in &communities {
+        total_capacity += 1 + comm.len();
+    }
+
+    // 4. Build the result vector
+    let mut result = Vec::with_capacity(total_capacity);
+    result.push(num_communities as jlong);
+
+    for comm in &communities {
+        result.push(comm.len() as jlong);
+        for &vertex_id in comm {
+            result.push(vertex_id as jlong);
+        }
+    }
+
+    // 5. Convert Vec<jlong> to jlongArray
+    match env.new_long_array(result.len() as i32) {
+        Ok(array) => {
+            if let Err(e) = env.set_long_array_region(&array, 0, &result) {
+                let _ = env.throw_new(
+                    "java/lang/RuntimeException",
+                    format!("Failed to set array region: {}", e),
+                );
+                return std::ptr::null_mut();
+            }
+            array.into_raw()
+        }
+        Err(e) => {
+            let _ = env.throw_new(
+                "java/lang/OutOfMemoryError",
+                format!("Failed to allocate array: {}", e),
+            );
+            std::ptr::null_mut()
+        }
+    }
+}

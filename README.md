@@ -38,7 +38,7 @@ mvn clean package
 Start the Gremlin Server. Ensure the server is fully started (wait for the port binding log) before running any clients.
 
 ```bash
-java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.GremmunityServer
+java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.MonacGraphServer
 ```
 
 ### 4. Running Clients
@@ -47,7 +47,7 @@ Open a new terminal window to run the example clients.
 Run the Standard Client:
 
 ```bash
-java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.GremmunityClient
+java -cp target/Gremmunity-1.0-SNAPSHOT.jar com.graph.rocks.example.MonacGraphClient
 
 #or
 

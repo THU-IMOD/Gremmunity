@@ -145,6 +145,10 @@ const cytoscapeStyle = [
       // 优先显示第一个非系统属性
       'label': function(ele) {
         const data = ele.data()
+
+        if (data.name) {
+          return data.name
+        }
         // 获取所有属性键
         const keys = Object.keys(data)
         // 过滤掉系统属性
@@ -378,6 +382,11 @@ const updateGraph = () => {
     ...store.graphData.edges
   ]
 
+  console.log(`Graph updated: ${store.graphData.nodes.length} nodes, ${store.graphData.edges.length} edges`)
+  console.log('Nodes:', store.graphData.nodes)
+  console.log('Edges:', store.graphData.edges)
+  console.log('Elements:', elements)
+
   // 计算合适的节点大小
   const nodeSize = calculateNodeSize(store.graphData.nodes.length)
   const fontSize = Math.max(12, Math.floor(nodeSize * 0.15))  // 字体大小约为节点的15%
@@ -394,6 +403,10 @@ const updateGraph = () => {
 
   cy.elements().remove()
   cy.add(elements)
+  
+  console.log('Cytoscape elements after add:', cy.elements().length, 'total')
+  console.log('Cytoscape nodes:', cy.nodes().length)
+  console.log('Cytoscape edges:', cy.edges().length)
   
   // 重新应用布局
   const layout = cy.layout(layouts[currentLayout.value])

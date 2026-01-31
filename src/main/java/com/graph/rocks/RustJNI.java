@@ -177,4 +177,12 @@ public class RustJNI {
      * @param edgeHandle Native edge handle to remove
      */
     public native void removeEdge(long graphHandle, long edgeHandle);
+
+    public native long[] getBfsVertices(long graphHandle, long vertexHandle);
+
+    public native long[] getWCC(long graphHandle);
+
+    public native long[] getSCC(long graphHandle);
+
+    public native long[] getCommunities(long graphHandle);
 }

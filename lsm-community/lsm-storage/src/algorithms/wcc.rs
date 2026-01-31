@@ -1,6 +1,7 @@
 use rayon::prelude::*;
+use rustc_hash::FxHashSet;
 
-use crate::{LsmCommunity, types::VId};
+use crate::{LsmCommunity, types::VId, delta::DeltaOpType};
 
 impl LsmCommunity {
     /// Compute Weakly Connected Components using Union-Find.
@@ -22,18 +23,46 @@ impl LsmCommunity {
     pub fn wcc(&self) -> Vec<VId> {
         let vertex_count = self.vertex_count();
         let vertex_index_state = self.vertex_index.read();
+
         let all_edges: Vec<(VId, VId)> = (0..vertex_count as VId)
             .into_par_iter()
             .flat_map(|vid| {
                 let mut edges = Vec::new();
 
-                if let Ok((Some(neighbors), _)) =
-                    self.read_neighbor_hold_index_vertex(vid, false, &vertex_index_state)
+                if let Ok((neighbors_iter, delta_log)) =
+                    self.read_neighbor_hold_index_vertex(vid, true, &vertex_index_state)
                 {
-                    for neighbor in neighbors {
-                        // Add both directions for undirected treatment
+                    // 1. Process base neighbor list (replaced with FxHashSet for O(1) lookup/removal)
+                    let mut base_neighbors = if let Some(neighbors) = neighbors_iter {
+                        // Convert iterator to HashSet, O(n) construction, subsequent operations are O(1)
+                        neighbors.collect::<FxHashSet<VId>>()
+                    } else {
+                        FxHashSet::default()
+                    };
+
+                    // 2. Process incremental operations in the delta log (Add/Remove)
+                    if let Some(delta) = delta_log {
+                        for op in delta.ops {
+                            match op.get_op_type() {
+                                Some(DeltaOpType::AddNeighbor) => {
+                                    // Add neighbor: HashSet.insert is O(1) (average case)
+                                    base_neighbors.insert(op.neighbor);
+                                }
+                                Some(DeltaOpType::RemoveNeighbor) => {
+                                    // Remove neighbor: HashSet.remove is O(1) (average case)
+                                    base_neighbors.remove(&op.neighbor);
+                                }
+                                None => {
+                                    // Ignore invalid operation types
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. Generate undirected edges (stored in both directions)
+                    for neighbor in base_neighbors {
                         edges.push((vid, neighbor));
-                        edges.push((neighbor, vid));
                     }
                 }
 

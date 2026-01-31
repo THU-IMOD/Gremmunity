@@ -20,7 +20,8 @@ import com.graph.rocks.serialize.VsetResultSerializer;
 public class VertexSubsetQueryBuilder {
     private final GraphTraversalSource g;
     private final List<Map.Entry<String, String>> conditions = new ArrayList<>();
-    private String filterQuery;
+    private String filterQuery = "true";
+    private String aggregationQuery = "true";
 
     /**
      * Create a new VertexSubsetQueryBuilder instance
@@ -35,8 +36,13 @@ public class VertexSubsetQueryBuilder {
      * @param g GraphTraversalSource for query execution
      * @return New SecondOrderQueryBuilder instance
      */
-    public static SecondOrderQueryBuilder secondOrder(GraphTraversalSource g) {
+    public static SecondOrderQueryBuilder SecondOrder(GraphTraversalSource g) {
         return new SecondOrderQueryBuilder(g);
+    }
+
+    public VertexSubsetQueryBuilder having(String aggregationCondition) {
+        this.aggregationQuery = aggregationCondition;
+        return this;
     }
 
     /**
@@ -76,10 +82,7 @@ public class VertexSubsetQueryBuilder {
      * @throws IllegalArgumentException If query conditions are incomplete
      */
     public Set<Set<Vertex>> execute() {
-        if (filterQuery == null || conditions.isEmpty()) {
-            throw new IllegalArgumentException("Incomplete query conditions - filter and quantifier variables required");
-        }
-        return VsetQuery(g, filterQuery, conditions);
+        return VsetQuery(g, filterQuery, aggregationQuery, conditions);
     }
 
     /**

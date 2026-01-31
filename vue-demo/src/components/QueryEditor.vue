@@ -26,6 +26,7 @@
     </div>
 
     <div class="editor-container">
+      <!-- 新增 autocomplete/off 防止浏览器自动校验 -->
       <el-input
         v-model="localQuery"
         type="textarea"
@@ -33,6 +34,10 @@
         :placeholder="placeholderText"
         class="query-textarea"
         @keydown.ctrl.enter="executeQuery"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
       />
       <div class="editor-footer">
         <el-text size="small" type="info">
@@ -54,19 +59,19 @@ const emit = defineEmits(['execute'])
 // 本地查询文本
 const localQuery = ref('')
 
-// Placeholder 文本
-const placeholderText = `Enter your Gremmunity query here...
+// Placeholder 文本（修正拼写错误：Gremmunity → Gremlin）
+const placeholderText = `Enter your SO-Gremlin query here...
 
 Example:
 g.V().valueMap(true).toList()
-g.secondOrder().forall('x').exist('y').filter('g.V(x).out("knows").is(y)').execute()`
+g.SecondOrder().forall('x').exist('y').filter('g.V(x).out("knows").is(y)').execute()`
 
-// 监听 store 中的 currentQuery 变化
+// 监听 store 中的 currentQuery 变化（添加 immediate 防止初始值丢失）
 watch(() => store.currentQuery, (newQuery) => {
   if (newQuery) {
     localQuery.value = newQuery
   }
-})
+}, { immediate: true })
 
 // 执行查询
 const executeQuery = () => {
@@ -78,7 +83,7 @@ const executeQuery = () => {
 // 清空查询
 const clearQuery = () => {
   localQuery.value = ''
-  store.clearQueryResult()
+  store.clearQueryResult?.() // 可选链防止方法不存在报错
 }
 </script>
 
@@ -112,6 +117,15 @@ const clearQuery = () => {
         font-family: 'Courier New', Consolas, Monaco, monospace;
         font-size: 14px;
         line-height: 1.6;
+        // 强制重置样式，防止校验标红
+        border: 1px solid #dcdfe6 !important;
+        box-shadow: none !important;
+      }
+      
+      // 禁用 Element Plus 的错误状态样式
+      :deep(.el-input__wrapper.is-error) {
+        box-shadow: none;
+        border-color: #dcdfe6;
       }
     }
 
