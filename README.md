@@ -2,6 +2,11 @@
 A graph database system based on the TinkerPop framework, supporting second-order logic.
 The storage backend is our community structure based graph storage system, i.e., LSM-Community.
 
+## Demo Video
+
+Watch the full demonstration of MonacGraph:  
+https://www.youtube.com/watch?v=Eezdq9tzbJE
+
 ## MonacGraph Build & Run Guide
 
 This guide explains how to compile the native LSM storage engine, build the Java application, and run the server/clients.
